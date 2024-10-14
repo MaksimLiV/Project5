@@ -73,14 +73,48 @@ class ViewController: UITableViewController {
     }
     
     func isPossible(word: String) -> Bool {
-        return true
+            guard let filePath = Bundle.main.path(forResource: "start", ofType: "txt"),
+                  let fileContents = try? String(contentsOfFile: filePath, encoding: .utf8) else {
+                print("Failed to load the file.")
+                return false
+            }
+            
+            let words = fileContents.lowercased().components(separatedBy: .newlines)
+            
+            guard var tempWord = words.first(where: { $0.contains(word.lowercased()) })?.lowercased() else {
+                print("The word '\(word)' was not found in the file.")
+                return false
+            }
+            
+            for letter in word {
+                if let position = tempWord.firstIndex(of: letter) {
+                    tempWord.remove(at: position)
+                } else {
+                    print("The letter '\(letter)' is not found in the word from the file.")
+                    return false
+                }
+            }
+            
+            print("The word '\(word)' can be formed from the word in the file.")
+            return true
+        }
+
+        func isOriginal(word: String) -> Bool {
+            let isOriginal = !usedWords.contains(word)
+            print("The word '\(word)' is \(isOriginal ? "original" : "not original").")
+            return isOriginal
+        }
+
+        func isReal(word: String) -> Bool {
+            let checker = UITextChecker()
+            let range = NSRange(location: 0, length: word.utf16.count)
+            let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+            let isReal = misspelledRange.location == NSNotFound
+            
+            print("The word '\(word)' is \(isReal ? "real" : "not real").")
+            return isReal
+        }
     }
-    
-    func isOriginal(word: String) -> Bool {
-        return true
-    }
-    
-    func isReal(word: String) -> Bool {
-        return true
-    }
-}
+
+
+
