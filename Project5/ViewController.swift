@@ -14,6 +14,7 @@ class ViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: "New game", style: .plain, target: self, action: #selector(startGame))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promtForAnswer))
         
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
@@ -27,10 +28,9 @@ class ViewController: UITableViewController {
         }
         
         startGame()
-        
     }
     
-    func startGame() {
+    @objc func startGame() {
         title = allWords.randomElement()
         usedWords.removeAll(keepingCapacity: true)
         tableView.reloadData()
@@ -39,7 +39,6 @@ class ViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return usedWords.count
     }
-    
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Word", for: indexPath)
@@ -56,6 +55,7 @@ class ViewController: UITableViewController {
             guard let answer = ac?.textFields?[0].text else { return }
             self?.submit(answer)
         }
+        
         ac.addAction(submitAction)
         present(ac, animated: true)
     }
@@ -63,35 +63,41 @@ class ViewController: UITableViewController {
     func submit(_ answer: String) {
         let lowerAnswer = answer.lowercased()
         
-        let errorTitle: String
-        let errorMessage: String
+        if lowerAnswer.count < 3 {
+            showErrorMessage(title: "Word too short", message: "Words must be at least 3 letters long.")
+            return
+        }
+        
+        guard let currentTitle = title?.lowercased() else { return }
+        if lowerAnswer == currentTitle {
+            showErrorMessage(title: "Same as start word", message: "You can't use the start word.")
+            return
+        }
         
         if isPossible(word: lowerAnswer) {
             if isOriginal(word: lowerAnswer) {
                 if isReal(word: lowerAnswer) {
                     usedWords.insert(answer, at: 0)
-                    
                     let indexPath = IndexPath(row: 0, section: 0)
                     tableView.insertRows(at: [indexPath], with: .automatic)
-                    
                     return
                 } else {
-                    errorTitle = "Word not recognized"
-                    errorMessage = "You can't just make them up, you know!"
+                    showErrorMessage(title: "Word not recognized", message: "You can't just make them up, you know!")
                 }
             } else {
-                errorTitle = "Word already used"
-                errorMessage = "Be more original!"
+                showErrorMessage(title: "Word already used", message: "Be more original!")
             }
         } else {
-            guard let title = title else { return }
-            errorTitle = "Word not possible"
-            errorMessage = "You can't spell that word from \(title.lowercased())."
+            showErrorMessage(title: "Word not possible", message: "You can't spell that word from \(currentTitle).")
         }
-        let ac = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
+    }
+    
+    func showErrorMessage(title: String, message: String) {
+        let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "OK", style: .default))
         present(ac, animated: true)
     }
+    
     
     func isPossible(word: String) -> Bool {
         guard var tempWord = title?.lowercased() else {
@@ -110,6 +116,7 @@ class ViewController: UITableViewController {
         
         print("Word is possible: \(word)")
         return true
+        
     }
     
     func isOriginal(word: String) -> Bool {
@@ -127,7 +134,5 @@ class ViewController: UITableViewController {
         print("Word \(word) is \(result ? "real" : "not real")")
         return result
     }
+    
 }
-
-
-
