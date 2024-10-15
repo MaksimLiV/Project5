@@ -27,7 +27,7 @@ class ViewController: UITableViewController {
         }
         
         startGame()
-            
+        
     }
     
     func startGame() {
@@ -36,7 +36,7 @@ class ViewController: UITableViewController {
         tableView.reloadData()
     }
     
-   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return usedWords.count
     }
     
@@ -69,52 +69,43 @@ class ViewController: UITableViewController {
             let indexPath = IndexPath(row: 0, section: 0)
             tableView.insertRows(at: [indexPath], with: .automatic)
         }
-        
     }
     
     func isPossible(word: String) -> Bool {
-            guard let filePath = Bundle.main.path(forResource: "start", ofType: "txt"),
-                  let fileContents = try? String(contentsOfFile: filePath, encoding: .utf8) else {
-                print("Failed to load the file.")
+        guard var tempWord = title?.lowercased() else {
+            print("Word not possible: no title")
+            return false
+        }
+        
+        for letter in word {
+            if let position = tempWord.firstIndex(of: letter) {
+                tempWord.remove(at: position)
+            } else {
+                print("Word not possible: \(word) cannot be made from \(tempWord)")
                 return false
             }
-            
-            let words = fileContents.lowercased().components(separatedBy: .newlines)
-            
-            guard var tempWord = words.first(where: { $0.contains(word.lowercased()) })?.lowercased() else {
-                print("The word '\(word)' was not found in the file.")
-                return false
-            }
-            
-            for letter in word {
-                if let position = tempWord.firstIndex(of: letter) {
-                    tempWord.remove(at: position)
-                } else {
-                    print("The letter '\(letter)' is not found in the word from the file.")
-                    return false
-                }
-            }
-            
-            print("The word '\(word)' can be formed from the word in the file.")
-            return true
         }
-
-        func isOriginal(word: String) -> Bool {
-            let isOriginal = !usedWords.contains(word)
-            print("The word '\(word)' is \(isOriginal ? "original" : "not original").")
-            return isOriginal
-        }
-
-        func isReal(word: String) -> Bool {
-            let checker = UITextChecker()
-            let range = NSRange(location: 0, length: word.utf16.count)
-            let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
-            let isReal = misspelledRange.location == NSNotFound
-            
-            print("The word '\(word)' is \(isReal ? "real" : "not real").")
-            return isReal
-        }
+        
+        print("Word is possible: \(word)")
+        return true
     }
+    
+    func isOriginal(word: String) -> Bool {
+        let result = !usedWords.contains(word)
+        print("Word \(word) is \(result ? "original" : "not original")")
+        return result
+    }
+    
+    func isReal(word: String) -> Bool {
+        let checker = UITextChecker()
+        let range = NSRange(location: 0, length: word.utf16.count)
+        let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
+        
+        let result = misspelledRange.location == NSNotFound
+        print("Word \(word) is \(result ? "real" : "not real")")
+        return result
+    }
+}
 
 
 
