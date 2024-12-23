@@ -10,12 +10,15 @@ import UIKit
 class ViewController: UITableViewController {
     var allWords = [String]()
     var usedWords = [String]()
+    var currentWord: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "New game", style: .plain, target: self, action: #selector(startGame))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promtForAnswer))
+        
+        loadGameData()
         
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL, encoding: .utf8) {
@@ -27,12 +30,21 @@ class ViewController: UITableViewController {
             allWords = ["silkworm"]
         }
         
-        startGame()
+        if currentWord == nil {
+            startGame()
+        } else {
+            title = currentWord
+            tableView.reloadData()
+        }
     }
     
     @objc func startGame() {
-        title = allWords.randomElement()
+        currentWord = allWords.randomElement()
         usedWords.removeAll(keepingCapacity: true)
+        
+        saveGameData()
+        
+        title = currentWord
         tableView.reloadData()
     }
     
@@ -68,7 +80,7 @@ class ViewController: UITableViewController {
             return
         }
         
-        guard let currentTitle = title?.lowercased() else { return }
+        guard let currentTitle = currentWord?.lowercased() else { return }
         if lowerAnswer == currentTitle {
             showErrorMessage(title: "Same as start word", message: "You can't use the start word.")
             return
@@ -80,6 +92,9 @@ class ViewController: UITableViewController {
                     usedWords.insert(answer, at: 0)
                     let indexPath = IndexPath(row: 0, section: 0)
                     tableView.insertRows(at: [indexPath], with: .automatic)
+                    
+                    saveGameData()
+                    
                     return
                 } else {
                     showErrorMessage(title: "Word not recognized", message: "You can't just make them up, you know!")
@@ -98,9 +113,8 @@ class ViewController: UITableViewController {
         present(ac, animated: true)
     }
     
-    
     func isPossible(word: String) -> Bool {
-        guard var tempWord = title?.lowercased() else {
+        guard var tempWord = currentWord?.lowercased() else {
             print("Word not possible: no title")
             return false
         }
@@ -116,7 +130,6 @@ class ViewController: UITableViewController {
         
         print("Word is possible: \(word)")
         return true
-        
     }
     
     func isOriginal(word: String) -> Bool {
@@ -135,4 +148,19 @@ class ViewController: UITableViewController {
         return result
     }
     
+    func saveGameData() {
+        let defaults = UserDefaults.standard
+        defaults.set(currentWord, forKey: "currentWord")
+        defaults.set(usedWords, forKey: "usedWords")
+    }
+    
+    func loadGameData() {
+        let defaults = UserDefaults.standard
+        if let savedCurrentWord = defaults.string(forKey: "currentWord") {
+            currentWord = savedCurrentWord
+        }
+        if let savedUsedWords = defaults.array(forKey: "usedWords") as? [String] {
+            usedWords = savedUsedWords
+        }
+    }
 }
